@@ -32,6 +32,8 @@ Step 6: Clean up and maintain persistence (if desired)
 •	The attacker may want to maintain access to the victim's machine or network. The attacker collects the credentials and can use them for further attacks.
 
 Step 7: End
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/8fc7863f-9974-4517-901b-4cecb05cb2c7" />
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/33cc433f-9e57-4b3f-91a1-829c7a78131e" />
 
 
 Setting up the project 
@@ -53,6 +55,9 @@ Stage 3: Social Engineering Payload Delivery
 •	It includes a message like: “Your system is missing critical updates. Please install this security patch to continue.”
 •	A downloadable .exe file is offered (named WindowsUpdateAssistant.exe or similar).
 •	The .exe is actually a custom Remote Access Trojan (RAT) or a commodity malware (e.g., Quasar RAT, Covenant, Metasploit payload) disguised as an update.
+
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/3a859e9e-b1d3-47a1-9758-b62b70a29890" />
+
 
 Stage 4: Malware Execution & Persistence
 •	Once the victim runs the .exe:
@@ -79,3 +84,23 @@ o	Encrypted HTTP/HTTPS POST requests.
 o	DNS tunneling.
 o	Steganography inside innocent-looking image uploads.
 •	Attacker can send remote commands: start/stop recording, upload files, deploy further malware.
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/51fc455b-af0d-4cf3-932b-2bedd6004503" />
+
+
+# Mitigation  
+ 
+1.	Host-Level (Endpoint Security): 
+•	Prevent unknown scripts like final.py from executing. Solutions like Windows Defender ATP, CrowdStrike, or SentinelOne can flag unusual Python usage. 
+•	Block or alert on libraries like keyboard hooking into input APIs. 
+•	Malware uses win32crypt.CryptUnprotectData. Ensure processes running outside the browser cannot access DPAPI-protected data (mitigate by credential managers and disabling Chrome password saving).  
+
+2.	Network-Level: 
+•	Block or monitor unusual outbound HTTP POST traffic to non-standard servers. 
+•	Look for base64 patterns in outbound HTTP requests (used in screenshot exfiltration).
+   
+3.	Browser & Credential Protection: 
+•	Disable saving of passwords in browsers. Enforce enterprise password managers instead. 
+•	Enforce MFA to limit impact of stolen credentials. 
+•	Regularly clear stored credentials and disable insecure storage in Chromium-based   browsers. 
+
+
