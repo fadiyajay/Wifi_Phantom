@@ -4,7 +4,7 @@
 
 
 
-Algorithm
+# Algorithm
 Step 1: Start
 
 Step 2: Setup the fake AP
@@ -32,11 +32,12 @@ Step 6: Clean up and maintain persistence (if desired)
 •	The attacker may want to maintain access to the victim's machine or network. The attacker collects the credentials and can use them for further attacks.
 
 Step 7: End
+
 <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/8fc7863f-9974-4517-901b-4cecb05cb2c7" />
 <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/33cc433f-9e57-4b3f-91a1-829c7a78131e" />
 
 
-Setting up the project 
+# Setting up the project 
 
 Step 1: Setting up the Rogue Access Point
 •	Attacker creates a rogue Wi-Fi hotspot with a legitimate-sounding SSID (e.g., Free_Airport_WiFi, Cafe_Guest).
