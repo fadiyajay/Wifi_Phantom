@@ -34,6 +34,8 @@ Step 6: Clean up and maintain persistence (if desired)
 Step 7: End
 
 <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/8fc7863f-9974-4517-901b-4cecb05cb2c7" />
+
+
 <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/33cc433f-9e57-4b3f-91a1-829c7a78131e" />
 
 
@@ -56,6 +58,7 @@ Stage 3: Social Engineering Payload Delivery
 •	It includes a message like: “Your system is missing critical updates. Please install this security patch to continue.”
 •	A downloadable .exe file is offered (named WindowsUpdateAssistant.exe or similar).
 •	The .exe is actually a custom Remote Access Trojan (RAT) or a commodity malware (e.g., Quasar RAT, Covenant, Metasploit payload) disguised as an update.
+
 
 <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/3a859e9e-b1d3-47a1-9758-b62b70a29890" />
 
@@ -85,6 +88,8 @@ o	Encrypted HTTP/HTTPS POST requests.
 o	DNS tunneling.
 o	Steganography inside innocent-looking image uploads.
 •	Attacker can send remote commands: start/stop recording, upload files, deploy further malware.
+
+
 <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/51fc455b-af0d-4cf3-932b-2bedd6004503" />
 
 
