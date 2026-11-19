@@ -1,5 +1,24 @@
 # Wifi_Phantom
 
+
+Algorithm
+Step 1: Start
+Step 2: Setup the fake AP
+•	By using ESP32 to create a fake AP with the same SSID as the target network.
+Step 3: De-authenticate clients from the legitimate AP (optional but common)
+•	Use a tool like aireplay-ng to send deauthentication packets to clients connected to the legitimate AP.
+Step 4: Intercept traffic and serve a fake EXE
+•	Set up a web server on the fake AP to serve a malicious EXE (e.g., a fake login application that steals credentials).
+•	Alternatively, use DNS spoofing to redirect users to a malicious website that hosts the EXE.
+Step 5: Deliver the EXE and steal credentials
+•	The EXE could be a fake software update or a required "login client" for the network.
+•	Once the user runs the EXE, it collects credentials (and possibly other information) and sends them to the attacker.
+Step 6: Clean up and maintain persistence (if desired)
+•	The attacker may want to maintain access to the victim's machine or network. The attacker collects the credentials and can use them for further attacks.
+Step 7: End
+
+
+
 Step 1: Setting up the Rogue Access Point
 •	Attacker creates a rogue Wi-Fi hotspot with a legitimate-sounding SSID (e.g., Free_Airport_WiFi, Cafe_Guest).
 •	The hotspot is set up using a device like a Raspberry Pi, Wi-Fi Pineapple, or laptop with dual Wi-Fi cards.
