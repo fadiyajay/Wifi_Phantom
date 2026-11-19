@@ -31,6 +31,7 @@ Step 6: Clean up and maintain persistence (if desired)
 Step 7: End
 
 
+Setting up the project 
 
 Step 1: Setting up the Rogue Access Point
 •	Attacker creates a rogue Wi-Fi hotspot with a legitimate-sounding SSID (e.g., Free_Airport_WiFi, Cafe_Guest).
